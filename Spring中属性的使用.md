@@ -19,14 +19,14 @@
 7. ServletContext init parameters.
 8. JNDI attributes from java:comp/env.
 9. Java System properties (System.getProperties()).
-10.OS environment variables.
-11.A RandomValuePropertySource that only has properties in random.*.
-12.Profile-specific application properties outside of your packaged jar (application-{profile}.properties and YAML variants)
-13.Profile-specific application properties packaged inside your jar (application-{profile}.properties and YAML variants)
-14.Application properties outside of your packaged jar (application.properties and YAMLvariants).
-15.Application properties packaged inside your jar (application.properties and YAML variants).
-16.@PropertySource annotations on your @Configuration classes.
-17.Default properties (specified using SpringApplication.setDefaultProperties).
+10. OS environment variables.
+11. A RandomValuePropertySource that only has properties in random.*.
+12. Profile-specific application properties outside of your packaged jar (application-{profile}.properties and YAML variants)
+13. Profile-specific application properties packaged inside your jar (application-{profile}.properties and YAML variants)
+14. Application properties outside of your packaged jar (application.properties and YAMLvariants).
+15 .Application properties packaged inside your jar (application.properties and YAML variants).
+16. @PropertySource annotations on your @Configuration classes.
+17. Default properties (specified using SpringApplication.setDefaultProperties).
 
 ## 属性获取
 Property values can be injected directly into your beans using the @Value annotation, accessed via Spring’s Environment abstraction or bound to structured objects via @ConfigurationProperties.
