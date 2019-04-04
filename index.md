@@ -4,7 +4,7 @@
 
 ## 以前
 
-* [spring中属性的使用](spring中属性的使用.md)
+* [Spring中属性的使用](Spring中属性的使用.md)
 * [spring data redis集成jodis的简单实现](SpringDataRedis集成jodis的简单实现.md)
 
 ## 2019.4
