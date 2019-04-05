@@ -278,3 +278,15 @@ First, identifiers are exported or unexported, not values. Second, the short var
 4. Interfaces are types that declare behavior and provide polymorphism.
 5. Type embedding provides the ability to extend types without the need for inheritance.
 6. Identifiers are either exported or unexported from packages. 
+
+
+
+# 并发
+## 并发和并行
+并发是指一个cpu上同时运行很多线程，并行是多个cpu上同时运行线程
+go的每个goroutine是建立在线程之上的轻量级线程，比线程切换效率高。每个goroutine会放在队列中，go调度器会自动安排goroutine到一个逻辑cpu的线程上，一般一个物理cpu配置一个逻辑cpu，这个配置可以改，调度器默认自动优化。一个物理cpu配多个逻辑cpu，不一定带来更好的性能。
+
+## race condition
+多goroutine对同一资源写操作会引起race
+一种是用锁方式解决，一种是用channel
+
