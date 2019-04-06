@@ -11,5 +11,5 @@
 
 * [记录一次kubernetes网络排障2019.4.1](2019.4/记录一次kubernetes网络排障.md)
 * [GoInAction笔记](2019.4/go_in_action.md)
-* 
+* [为什么要重写hashcode和equals方法.](2019.4/为什么要重写hashcode和equals方法.md)
 
