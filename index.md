@@ -12,6 +12,6 @@
 * [记录一次kubernetes网络排障2019.4.1](2019.4/记录一次kubernetes网络排障.md)
 * [GoInAction笔记](2019.4/go_in_action.md)
 * [为什么要重写hashcode和equals方法--java](2019.4/为什么要重写hashcode和equals方法.md)
-* [int和Integer的区别--java](int和Integer的区别.md)
-* [SVN与Git比较的优缺点差异--SVN,Git](SVN与Git比较的优缺点差异.md)
+* [int和Integer的区别--java](2019.4/int和Integer的区别.md)
+* [SVN与Git比较的优缺点差异--SVN,Git](2019.4/SVN与Git比较的优缺点差异.md)
 
