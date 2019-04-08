@@ -15,4 +15,5 @@
 * [(2019.4.7)int和Integer的区别--java](2019.4/int和Integer的区别.md)
 * [(2019.4.7)SVN与Git比较的优缺点差异--SVN,Git](2019.4/SVN与Git比较的优缺点差异.md)
 * [(2019.4.8)如何查看k8s保存在etcd中的数据--k8s,etcd](2019.4/如何查看k8s保存在etcd中的数据.md)
+* [(2019.4.8)zuul路由对前缀的处理--springcloud,zuul,prefix](2019.4/zuul路由对前缀的处理.md)
 
