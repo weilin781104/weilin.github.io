@@ -9,9 +9,10 @@
 
 ## 2019.4
 
-* [记录一次kubernetes网络排障2019.4.1](2019.4/记录一次kubernetes网络排障.md)
-* [GoInAction笔记](2019.4/go_in_action.md)
-* [为什么要重写hashcode和equals方法--java](2019.4/为什么要重写hashcode和equals方法.md)
-* [int和Integer的区别--java](2019.4/int和Integer的区别.md)
-* [SVN与Git比较的优缺点差异--SVN,Git](2019.4/SVN与Git比较的优缺点差异.md)
+* [(2019.4.1)记录一次kubernetes网络排障--k8s,flannel](2019.4/记录一次kubernetes网络排障.md)
+* [GoInAction笔记--go](2019.4/go_in_action.md)
+* [(2019.4.6)为什么要重写hashcode和equals方法--java](2019.4/为什么要重写hashcode和equals方法.md)
+* [(2019.4.7)int和Integer的区别--java](2019.4/int和Integer的区别.md)
+* [(2019.4.7)SVN与Git比较的优缺点差异--SVN,Git](2019.4/SVN与Git比较的优缺点差异.md)
+* [(2019.4.8)如何查看k8s保存在etcd中的数据--k8s,etcd](2019.4/如何查看k8s保存在etcd中的数据.md)
 
