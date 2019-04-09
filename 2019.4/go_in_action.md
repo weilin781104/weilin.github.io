@@ -288,5 +288,50 @@ go的每个goroutine是建立在线程之上的轻量级线程，比线程切换
 
 ## race condition
 多goroutine对同一资源写操作会引起race
+
+解决race的办法就是保证对公共资源的读写是原子性的，就是一个时刻只能一个goroutine操作
+
 一种是用锁方式解决，一种是用channel
 
+## 锁住共享资源
+
+Atomic functions provider low-level locking mechanisms for synchronizing access to integers and pointers.
+
+```
+atomic.AddInt64
+atomic.LoadInt64
+atomic.StoreInt64
+```
+
+Mutex  相当于java中的锁
+
+A mutex is used to create a critical section around code that ensures only one goroutine at a tie can execute that code section.
+
+## Channel
+
+```
+// Unbuffered channel of integers.
+unbuffered := make(chan int)
+// Buffered channel of strings.
+buffered := make(chan string, 10)
+
+buffered <- "Gopher"
+value := <-buffered
+```
+
+An unbuffered channel is a channel with no capacity to hold any value before it's received. These types of channels require both a sending and receiving gorouting to be ready at the same instant before any send or receive operation can complete.
+
+unbuffered channel 是发送方和接收方交接那刻发生的，只有一方的情况下回被block住，不会发生某个时刻多方读写到channel中的内容，内容不在channel中保存，所以内容是同步的。 例子是乒乓球来回，和接力跑
+
+buffered channel类似于生产消费的异步模式。 生产和消费是无关的，生产和消费操作保证同一时刻只有一个gorouting获取到权限。
+
+buffered channel可以关闭，这样仍然可以接受内容不影响接收，只是不能再发送内容了。这样保证所有消息都会接收到，不会有消息遗漏。一旦channel closed and empty， 就表示完成了。
+
+## Summary
+1. Concurrency is the independent execution of goroutines.
+2. Functions are created as goroutines with the keyword go.
+3. Goroutines are executed within the scope of a logical processor that owns a single operating system thread and run queue.
+4. A race condition is when two or more goroutines attempt to access the same resource.
+5. Atomic functions and mutexes provide a way to protect against race conditions.
+6. Channels provide an intrinsic way to safely share data between two goroutines.
+7. Unbuffered channels provide a guarantee between an exchange of data. Buffered channels do not
