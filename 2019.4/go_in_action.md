@@ -335,3 +335,168 @@ buffered channel可以关闭，这样仍然可以接受内容不影响接收，�
 5. Atomic functions and mutexes provide a way to protect against race conditions.
 6. Channels provide an intrinsic way to safely share data between two goroutines.
 7. Unbuffered channels provide a guarantee between an exchange of data. Buffered channels do not
+
+# 并发模型
+
+## runner
+The purpose of the runner package is to show how channels can be used to monitor the amount of time a program is running and terminate the program if it runs too long. This pattern is useful when developing a program that will be scheduled to run as a background task process.
+
+
+
+
+## pool
+
+you can use a buffered channel to pool a set of resources that can be shared and individually used by any number of goroutines. This pattern is useful when you have a static set of resources to share, such as database connections or memory buffers.  
+
+
+
+```
+#pool.go
+package pool
+
+import(
+    "errors"
+    "log"
+    "io"
+    "sync"
+)
+
+type Pool struct {
+    m         sync.Mutex
+    resources chan io.Closer
+    factory   func() (io.Closer, error)
+    closed    bool
+}
+
+var ErrPoolClosed=errors.New("Pool has been closed.")
+
+func New(fn func() (io.Closer, error), size uint) (*Pool, error){
+    if size<=0 {
+        return nil,errors.New("Size value too small.")
+    }
+
+    return &Pool{
+        factory: fn,
+        resources: make(chan io.Closer, size),
+    },nil
+}
+
+func (p *Pool) Acquire() (io.Closer, error) {
+    select {
+    case r, ok := <-p.resources:
+        log.Println("Acquire:", "Shared Resource")
+        if !ok {
+            return nil,ErrPoolClosed
+        }
+        return r,nil
+
+    default:
+        log.Println("Acquire:","New Resource")
+        return p.factory()
+    }
+}
+
+func (p *Pool) Release( r io.Closer){
+    p.m.Lock()
+    defer p.m.Unlock()
+
+    if p.closed{
+        r.Close()
+        return
+    }
+
+    select{
+    case p.resources <- r:
+        log.Println("Release:","In Queue")
+    default:
+        log.Println("Release:","Closing")
+        r.Close()
+    }
+}
+
+func (p *Pool) Close() {
+    p.m.Lock()
+    defer p.m.Unlock()
+
+    if p.closed{
+        return
+    }
+    p.closed=true
+    close(p.resources)
+
+   for r:=range p.resources{
+       r.Close()
+   }
+}
+
+
+#main.go
+package main
+
+import(
+    "log"
+    "io"
+    "math/rand"
+    "sync"
+    "sync/atomic"
+    "time"
+
+    "pool"
+)
+
+const(
+    maxGoroutines =25
+    pooledResources =2
+)
+
+type dbConnection struct{
+    ID int32
+}
+func (dbConn *dbConnection) Close() error{
+     log.Println("Close:Connection", dbConn.ID)
+     return nil
+}
+
+var idCounter int32
+
+func createConnection() (io.Closer, error) {
+    id:=atomic.AddInt32(&idCounter,1)
+    log.Println("Create:New Connection",id)
+    return &dbConnection{id},nil
+}
+
+func main(){
+    var wg sync.WaitGroup
+    wg.Add(maxGoroutines)
+    p, err :=pool.New(createConnection,pooledResources)
+    if err!=nil{
+       log.Println(err)
+    }
+
+    for query:=0;query<maxGoroutines;query++{
+        go func(q int){
+            performQueries(q,p)
+            wg.Done()
+        }(query)
+    }
+    wg.Wait()
+    log.Println("Shutdown Program.")
+    p.Close()
+}
+
+func performQueries(query int, p *pool.Pool){
+    conn,err:=p.Acquire()
+    if err!=nil{
+        log.Println(err)
+        return
+    }
+
+    defer p.Release(conn)
+
+    time.Sleep(time.Duration(rand.Intn(10))*time.Second)
+    log.Printf("QID[%d] CID[%d]\n",query, conn.(*dbConnection).ID)
+}
+
+
+```
+
