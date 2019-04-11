@@ -341,7 +341,103 @@ buffered channel可以关闭，这样仍然可以接受内容不影响接收，�
 ## runner
 The purpose of the runner package is to show how channels can be used to monitor the amount of time a program is running and terminate the program if it runs too long. This pattern is useful when developing a program that will be scheduled to run as a background task process.
 
+```
+#runner.go
+package runner
 
+import(
+    "errors"
+    "os"
+    "os/signal"
+    "time"
+)
+type Runner struct{
+   interrupt chan os.Signal
+   complete chan error
+   timeout  <-chan time.Time
+   tasks []func(int)
+}
+var ErrTimeout=errors.New("received timeout")
+var ErrInterrupt=errors.New("received interrupt")
+
+func New(d time.Duration) *Runner{
+   return &Runner{
+       interrupt: make(chan os.Signal,1),
+       complete: make(chan error),
+       timeout:  time.After(d),
+   }
+}
+func (r *Runner) Add(tasks ...func(int)){
+   r.tasks=append(r.tasks, tasks...)
+}
+func (r *Runner) Start() error{
+    signal.Notify(r.interrupt, os.Interrupt)
+        go func(){
+         r.complete<-r.run()
+     }()
+     select{
+     case err:=<-r.complete:
+        return err
+     case <-r.timeout:
+        return ErrTimeout
+     }
+}
+func (r *Runner) run() error{
+    for id,task:=range r.tasks{
+        if r.gotInterrupt(){
+            return ErrInterrupt
+        }
+        task(id)
+    }
+    return nil
+}
+func (r *Runner) gotInterrupt() bool{
+    select{
+    case <-r.interrupt:
+        signal.Stop(r.interrupt)
+        return true
+    default:
+        return false
+    }
+ }
+}
+
+#main/main.go
+package main
+
+import(
+    "log"
+    "time"
+    "os"
+    "runner"
+)
+const timeout=4*time.Second
+
+func main(){
+    log.Println("Starting work.")
+    r:=runner.New(timeout)
+    r.Add(createTask(),createTask(),createTask())
+    if err:=r.Start();err!=nil{
+       switch err{
+       case runner.ErrTimeout:
+           log.Println("Terminating due to timeout.")
+           os.Exit(1)
+       case runner.ErrInterrupt:
+           log.Println("Terminating due to interrupt")
+           os.Exit(2)
+       }
+     }
+     log.Println("Process ended.")
+}
+func createTask() func(int){
+    return func(id int){
+         log.Printf("Processro - Task #%d.", id)
+         time.Sleep(time.Duration(id)*time.Second)
+    }
+}
+
+
+```
 
 
 ## pool
@@ -499,4 +595,114 @@ func performQueries(query int, p *pool.Pool){
 
 
 ```
+
+## work
+
+The purpose of the work package is to show how you can use an unbuffered channel to create a pool of goroutines that will perform and control the amount of work that gets done concurrently. This is a better approach than using a buffered channel of some arbitrary static size that acts as a queue of work and throwing a bunch of goroutines at it. 
+
+```
+#work.go
+package work
+
+import "sync"
+
+type Worker interface{
+    Task()
+}
+type Pool struct{
+    work chan Worker
+    wg  sync.WaitGroup
+}
+
+func New(maxGoroutines int) *Pool{
+    p:=Pool{
+       work: make(chan Worker),
+    }
+    p.wg.Add(maxGoroutines)
+    for i:=0;i<maxGoroutines;i++{
+        go func(){
+           for w:=range p.work{
+               w.Task()
+           }
+           p.wg.Done()
+        }()
+    }
+    return &p
+}
+
+func (p *Pool) Run(w Worker){
+    p.work<-w
+}
+func(p *Pool) Shutdown(){
+    close(p.work)
+    p.wg.Wait()
+}
+
+#main/main.go
+package main
+
+import(
+    "log"
+    "sync"
+    "time"
+    "work"
+)
+
+var names =[]string{
+    "steve",
+    "bob",
+    "mary",
+    "therese",
+    "jason",
+}
+type namePrinter struct{
+    name string
+}
+func(m *namePrinter) Task(){
+   log.Println(m.name)
+   time.Sleep(time.Second)
+}
+func main(){
+   p:=work.New(2)
+   var wg sync.WaitGroup
+   wg.Add(20*len(names))
+   for i:=0;i<20;i++{
+      for _,name:=range names{
+         np:=namePrinter{
+             name:name,
+          }
+         go func(){
+            p.Run(&np)
+            wg.Done()
+         }()
+      }
+    }
+    wg.Wait()
+    p.Shutdown()
+}
+```
+
+## Summary
+
+You can use channels to control the lifetime of programs.
+
+A select statement with a default case can be used to attempt a nonblocking send or receive on a channel.
+
+Buffered channels can be used to manage a pool of resources that can be reused.
+
+The coordination and synchronization of channels is taken care of by the runtime.
+
+Create a pool of goroutines to perform work using unbuffered channels.
+
+Any time an unbuffered channel can be used to exchange data between two goroutines, you have guarantees you can count on. 
+
+
+
+# 标准库
+
+可以查看
+
+https://golang.google.cn/pkg/
+
+或者源文件 $GOROOT/pkg，比如/usr/lib/golang/src/
 
