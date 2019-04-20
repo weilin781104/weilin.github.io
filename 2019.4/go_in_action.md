@@ -706,3 +706,19 @@ https://golang.google.cn/pkg/
 
 或者源文件 $GOROOT/pkg，比如/usr/lib/golang/src/
 
+
+
+# 测试
+
+## 单元测试
+
+文件以_test.go结尾
+
+方法以Test开头，并传入一个t *testing.T 指针，没有返回值
+
+T.fatal T.error就会测试失败返回 
+
+go test -v
+
+
+
