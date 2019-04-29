@@ -467,6 +467,24 @@ lvs在DR模式下需要关闭arp功能
 
 
 
+注：
+
+LVS realserver lo端口配置中涉及到调整两个[网络](http://www.wredian.com/tags-%E7%BD%91%E7%BB%9C-0.html)参数 arp_announce=2 和 arp_ignore=1,忽略官方文档复杂晦涩的表述，其实我们可以这样理解:
+
+arp_ignore=1 表示对于网络上发来的arp广播包，realserver的lo端口将会丢弃，因为如果做出应答，根据arp协议，相当于通告网络上其它主机VIP对应的Mac地址是realserver的Mac地址，而不是LB的Mac地址，这样[客户端](http://www.07net01.com/tags-%E5%AE%A2%E6%88%B7%E7%AB%AF-0.html)上就会绕过lvs,直接与后端的realserver通信，负载调度就失去了意义；
+
+arp_announce: realserver 一般至少两个端口 两个ip，eth0 有ip,lo:0也绑定了一个vip，根据arp协议，arp请求包中必须包含源主机的[IP地址](http://www.07net01.com/tags-IP%E5%9C%B0%E5%9D%80-0.html)和Mac地址，对方收到请求包后，记录下该源地址和Mac地址，建立一对一的映射，那么对于这种多IP的情况，realserver发送arp请求报的时候该如何取舍，将哪个ip作为源地址？参数arp_anonunce 正好是用来解决这个问题的，arp_announce=2 官方表述为使用最适当的本地地址，其实就是将eth0上的ip作为源地址，如果将vip作为源地址，对方就会将vip与realserver的mac地址映射起来，导致请求包都发给realserver，而不经过lvs.
+
+
+
+arp_ignore=1，系统只回答目的IP为是本地IP的包。也就是对广播包不做响应。
+
+arp_announce=2，系统忽略IP包的源地址（source address），而根据目标主机（target host），选择本地地址。
+
+而且凡是能收到对VIP ARP广播报文的网口，都需要设置。
+
+
+
 ## **1.6 LVS集群的工作模式**
 
 
@@ -622,7 +640,8 @@ LVS的DR和NAT模式要求RS和LVS在同一个vlan中，导致部署成本过高
 
 ## **1.8 LVS+Keepalived方案实现**
 
-------
+LVS可以实现负载均衡，但是不能够进行健康检查，比如一个rs出现故障，LVS 仍然会把请求转发给故障的rs服务器，这样就会导致请求的无效性。keepalive 软件可以进行健康检查，而且能同时实现 LVS 的高可用性，解决 LVS 单点故障的问题，其实 keepalive 就是为 LVS 而生的。
+
 
 ### 1.8.1 keepalived功能
 
@@ -630,7 +649,8 @@ LVS的DR和NAT模式要求RS和LVS在同一个vlan中，导致部署成本过高
 2. 添加LVS配置
 3. 高可用（VIP漂移）
 4. web服务器健康检查
-5. 
+
+   
 
 ### 1.8.2 在负载器安装Keepalived软件
 
@@ -651,8 +671,54 @@ keepalived-1.3.5-1.el7.x86_64
 
 lb03上keepalied配置文件
 
-
 lb03 /etc/keepalived/keepalived.conf
+
+主节点( MASTER )配置文件
+```
+vim /etc/keepalived/keepalived.conf
+vrrp_instance VI_1 {
+    state MASTER
+    interface eth0
+    virtual_router_id 51
+    priority 100
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+    virtual_ipaddress {
+        10.0.0.13
+    }
+}
+
+virtual_server 10.0.0.13 80 {
+    delay_loop 6
+    lb_algo rr
+    lb_kind DR
+    persistence_timeout 0
+    protocol TCP
+
+    real_server 10.0.0.17 80 {
+        weight 1
+        TCP_CHECK {
+            connect_timeout 10
+            nb_get_retry 3
+            delay_before_retry 3
+            connect_port 80
+        }
+    }
+
+    real_server 10.0.0.18 80 {
+        weight 1
+        TCP_CHECK {
+            connect_timeout 10
+            nb_get_retry 3
+            delay_before_retry 3
+            connect_port 80
+        }
+    }
+}
+```
 
 
 
@@ -660,11 +726,61 @@ lb04的Keepalied配置文件
 
 lb04 /etc/keepalived/keepalived.conf
 
+vim /etc/keepalived/keepalived.conf
+vrrp_instance VI_1 {
+    state BACKUP
+    interface eth0
+    virtual_router_id 51
+    priority 90
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+    virtual_ipaddress {
+        10.0.0.13
+    }
+}
 
+virtual_server 10.0.0.13 80 {
+    delay_loop 6
+    lb_algo rr
+    lb_kind DR
+    persistence_timeout 0
+    protocol TCP
+
+    real_server 10.0.0.17 80 {
+        weight 1
+        TCP_CHECK {
+            connect_timeout 10
+            nb_get_retry 3
+            delay_before_retry 3
+            connect_port 80
+        }
+    }
+    
+    real_server 10.0.0.18 80 {
+        weight 1
+        TCP_CHECK {
+            connect_timeout 10
+            nb_get_retry 3
+            delay_before_retry 3
+            connect_port 80
+        }
+    }
+}
 
 keepalived persistence_timeout参数意义 LVS Persistence 参数的作用
 
 [http://blog.csdn.net/nimasike/article/details/53911363](https://link.jianshu.com?t=http%3A%2F%2Fblog.csdn.net%2Fnimasike%2Farticle%2Fdetails%2F53911363)
+
+
+
+**keepalived的2个节点执行如下命令，开启转发功能：**
+
+```
+# echo 1 > /proc/sys/net/ipv4/ip_forward
+```
 
 
 
