@@ -51,9 +51,7 @@ MASTER和BACKUP节点的优先级如何调整？
 以下几种情况发生主备切换：
 
 1. master主机或网络故障，不发送VRRP通告，即backup收不到VRRP通告
-
 2. master健康检查脚本失败，引起优先级降级，即backup收到优先级小于自己的VRRP通告
-
 3. 原master健康检查脚本成功，优先级恢复，即backup收到优先级大于自己的VRRP通告
-
 4. 如果未设置weight时，weight默认值为0，此时当vrrp_script连续检测失败时，vrrp实例进入FAULT状态。会导致VIP转移，原来如此！！
+5. 如果初始两台主机都配置成backup，默认就是谁优先级高谁就是master。 如果优先级高的那台配上nopreempt，即使原优先级高的master再次上线也不会重新抢到master。
