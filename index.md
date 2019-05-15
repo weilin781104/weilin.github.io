@@ -40,4 +40,5 @@
 * [(2019.5.12)IPV6系列-入门指南--ipv6](2019.5/IPV6系列-入门指南.md)
 * [(2019.5.13)Nginx极简教程--nginx](2019.5/Nginx极简教程.md)
 * [(2019.5.14)调研Redis高可用两种方案--redis](2019.5/调研Redis高可用两种方案.md)
+* [(2019.5.15)redis高可用方案实践--redis,sentinel,keepalived](2019.5/redis高可用方案实践.md)
 

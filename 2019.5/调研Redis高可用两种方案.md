@@ -206,6 +206,88 @@ Redis拓扑结构信息包括了：
 
 
 
+## 实例：
+
+codis里三个sentinel failover一个group的master：
+
+192.168.11.73:6379 master down之后，三个sentinel交互，互相发is-master-down-by-addr,谁先收到quorum个回应则odown，并开始一个新选举周期获得领导者（也是通过发is-master-down-by-addr，收到的只会对第一个回应，谁先收到超过半数回应就成为领导者） ，这里第二台sentinel获得领导者，发起failover，把192.168.11.72:6380提升为master，192.168.11.73:6379 变成它的slave。
+
+
+
+sentinel1：
+
+```
+1:X 13 May 11:37:10.763 # Sentinel ID is e5b28cc1706b9a5bcd57fa2965fb7887d74b4009
+1:X 13 May 11:37:10.763 # +monitor master codis-iptv-1 192.168.11.72 6379 quorum 2
+1:X 13 May 11:37:10.763 # +monitor master codis-iptv-2 192.168.11.73 6379 quorum 2
+1:X 13 May 11:38:47.335 # +new-epoch 49
+1:X 13 May 11:38:47.337 # +vote-for-leader 12b910b577870ce3770f026c9192a18700bd588f 49
+1:X 13 May 11:38:47.530 # +sdown master codis-iptv-2 192.168.11.73 6379
+1:X 13 May 11:38:47.593 # +odown master codis-iptv-2 192.168.11.73 6379 #quorum 3/2
+1:X 13 May 11:38:47.593 # Next failover delay: I will not start a failover before Mon May 13 11:39:47 2019
+1:X 13 May 11:38:48.472 # +config-update-from sentinel 12b910b577870ce3770f026c9192a18700bd588f 192.168.11.72 26379 @ codis-iptv-2 192.168.11.73 6379
+1:X 13 May 11:38:48.473 # +switch-master codis-iptv-2 192.168.11.73 6379 192.168.11.72 6380
+1:X 13 May 11:38:48.474 * +slave slave 192.168.11.73:6379 192.168.11.73 6379 @ codis-iptv-2 192.168.11.72 6380
+1:X 13 May 11:38:53.484 # +sdown slave 192.168.11.73:6379 192.168.11.73 6379 @ codis-iptv-2 192.168.11.72 6380
+1:X 13 May 11:39:11.811 # -sdown slave 192.168.11.73:6379 192.168.11.73 6379 @ codis-iptv-2 192.168.11.72 6380
+1:X 13 May 11:39:32.604 # +sdown slave 192.168.11.73:6379 192.168.11.73 6379 @ codis-iptv-2 192.168.11.72 6380
+1:X 13 May 11:39:36.103 # -sdown slave 192.168.11.73:6379 192.168.11.73 6379 @ codis-iptv-2 192.168.11.72 6380
+```
+
+sentinel2：
+
+```
+1:X 13 May 11:38:27.167 # Sentinel ID is 12b910b577870ce3770f026c9192a18700bd588f
+1:X 13 May 11:38:27.167 # +monitor master codis-iptv-1 192.168.11.72 6379 quorum 2
+1:X 13 May 11:38:27.167 # +monitor master codis-iptv-2 192.168.11.73 6379 quorum 2
+1:X 13 May 11:38:46.761 # +sdown master codis-iptv-2 192.168.11.73 6379
+1:X 13 May 11:38:46.820 # +odown master codis-iptv-2 192.168.11.73 6379 #quorum 2/2
+1:X 13 May 11:38:46.820 # +new-epoch 49
+1:X 13 May 11:38:46.820 # +try-failover master codis-iptv-2 192.168.11.73 6379
+1:X 13 May 11:38:46.829 # +vote-for-leader 12b910b577870ce3770f026c9192a18700bd588f 49
+1:X 13 May 11:38:46.835 # e5b28cc1706b9a5bcd57fa2965fb7887d74b4009 voted for 12b910b577870ce3770f026c9192a18700bd588f 49
+1:X 13 May 11:38:46.854 # 305400ae9551503251fee88b7a8ba403093b0929 voted for 12b910b577870ce3770f026c9192a18700bd588f 49
+1:X 13 May 11:38:46.905 # +elected-leader master codis-iptv-2 192.168.11.73 6379
+1:X 13 May 11:38:46.905 # +failover-state-select-slave master codis-iptv-2 192.168.11.73 6379
+1:X 13 May 11:38:46.977 # +selected-slave slave 192.168.11.72:6380 192.168.11.72 6380 @ codis-iptv-2 192.168.11.73 6379
+1:X 13 May 11:38:46.977 * +failover-state-send-slaveof-noone slave 192.168.11.72:6380 192.168.11.72 6380 @ codis-iptv-2 192.168.11.73 6379
+1:X 13 May 11:38:47.077 * +failover-state-wait-promotion slave 192.168.11.72:6380 192.168.11.72 6380 @ codis-iptv-2 192.168.11.73 6379
+1:X 13 May 11:38:47.904 # +promoted-slave slave 192.168.11.72:6380 192.168.11.72 6380 @ codis-iptv-2 192.168.11.73 6379
+1:X 13 May 11:38:47.904 # +failover-state-reconf-slaves master codis-iptv-2 192.168.11.73 6379
+1:X 13 May 11:38:47.960 # +failover-end master codis-iptv-2 192.168.11.73 6379
+1:X 13 May 11:38:47.960 # +switch-master codis-iptv-2 192.168.11.73 6379 192.168.11.72 6380
+1:X 13 May 11:38:47.960 * +slave slave 192.168.11.73:6379 192.168.11.73 6379 @ codis-iptv-2 192.168.11.72 6380
+1:X 13 May 11:38:52.973 # +sdown slave 192.168.11.73:6379 192.168.11.73 6379 @ codis-iptv-2 192.168.11.72 6380
+1:X 13 May 11:39:10.759 # -sdown slave 192.168.11.73:6379 192.168.11.73 6379 @ codis-iptv-2 192.168.11.72 6380
+1:X 13 May 11:39:20.751 * +convert-to-slave slave 192.168.11.73:6379 192.168.11.73 6379 @ codis-iptv-2 192.168.11.72 6380
+1:X 13 May 11:39:32.231 # +sdown slave 192.168.11.73:6379 192.168.11.73 6379 @ codis-iptv-2 192.168.11.72 6380
+1:X 13 May 11:39:35.675 # -sdown slave 192.168.11.73:6379 192.168.11.73 6379 @ codis-iptv-2 192.168.11.72 6380
+```
+
+sentinel3：
+
+```
+1:X 13 May 11:38:41.323 # Sentinel ID is 305400ae9551503251fee88b7a8ba403093b0929
+1:X 13 May 11:38:41.323 # +monitor master codis-iptv-1 192.168.11.72 6379 quorum 2
+1:X 13 May 11:38:41.323 # +monitor master codis-iptv-2 192.168.11.73 6379 quorum 2
+1:X 13 May 11:38:46.366 # +sdown master codis-iptv-2 192.168.11.73 6379
+1:X 13 May 11:38:46.673 # +new-epoch 49
+1:X 13 May 11:38:46.689 # +vote-for-leader 12b910b577870ce3770f026c9192a18700bd588f 49
+1:X 13 May 11:38:47.470 # +odown master codis-iptv-2 192.168.11.73 6379 #quorum 3/2
+1:X 13 May 11:38:47.470 # Next failover delay: I will not start a failover before Mon May 13 11:39:47 2019
+1:X 13 May 11:38:47.804 # +config-update-from sentinel 12b910b577870ce3770f026c9192a18700bd588f 192.168.11.72 26379 @ codis-iptv-2 192.168.11.73 6379
+1:X 13 May 11:38:47.804 # +switch-master codis-iptv-2 192.168.11.73 6379 192.168.11.72 6380
+1:X 13 May 11:38:47.804 * +slave slave 192.168.11.73:6379 192.168.11.73 6379 @ codis-iptv-2 192.168.11.72 6380
+1:X 13 May 11:38:52.878 # +sdown slave 192.168.11.73:6379 192.168.11.73 6379 @ codis-iptv-2 192.168.11.72 6380
+1:X 13 May 11:39:12.293 # -sdown slave 192.168.11.73:6379 192.168.11.73 6379 @ codis-iptv-2 192.168.11.72 6380
+1:X 13 May 11:39:31.841 # +sdown slave 192.168.11.73:6379 192.168.11.73 6379 @ codis-iptv-2 192.168.11.72 6380
+1:X 13 May 11:39:35.466 # -sdown slave 192.168.11.73:6379 192.168.11.73 6379 @ codis-iptv-2 192.168.11.72 6380
+```
+
+
+
+
+
 **原文地址：**
 
 https://www.codedump.info/post/20190409-redis-sentinel/
