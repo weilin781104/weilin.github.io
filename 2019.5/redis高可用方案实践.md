@@ -64,8 +64,8 @@
 protected-mode no
 daemonize yes
 logfile "/var/log/redis.log"
-masterauth shk9Hjwe
-requirepass shk9Hjwe
+masterauth 123456
+requirepass 123456
 maxmemory 1g
 maxmemory-policy volatile-lru
 appendonly yes
@@ -77,7 +77,7 @@ appendonly yes
 tcp    LISTEN     0      128       *:6379                  *:*                   users:(("redis-server",pid=11231,fd=7))
 tcp    LISTEN     0      128      :::6379                 :::*                   users:(("redis-server",pid=11231,fd=6))
 
-[root@web01 redis]# ./bin/redis-cli -a shk9Hjwe info
+[root@web01 redis]# ./bin/redis-cli -a 123456 info
 
 
 ```
@@ -105,7 +105,7 @@ replicaof 192.168.11.123 6379
 tcp    LISTEN     0      128       *:6379                  *:*                   users:(("redis-server",pid=11180,fd=7))
 tcp    LISTEN     0      128      :::6379                 :::*                   users:(("redis-server",pid=11180,fd=6))
 
-[root@web02 redis]#  ./bin/redis-cli -a shk9Hjwe info 
+[root@web02 redis]#  ./bin/redis-cli -a 123456 info 
 
 ```
 
@@ -128,7 +128,7 @@ tcp    LISTEN     0      128      :::6379                 :::*                  
 [root@web03 redis]#  ss -tunlp|grep 6379
 tcp    LISTEN     0      128       *:6379                  *:*                   users:(("redis-server",pid=11800,fd=7))
 tcp    LISTEN     0      128      :::6379                 :::*                   users:(("redis-server",pid=11800,fd=6))
-[root@web03 redis]# ./bin/redis-cli -a shk9Hjwe info
+[root@web03 redis]# ./bin/redis-cli -a 123456 info
 ```
 
 
@@ -136,19 +136,19 @@ tcp    LISTEN     0      128      :::6379                 :::*                  
 #### 测试主从复制功能
 
 ```
-[root@devhost log]# redis-cli -h 192.168.11.123 -p 6379 -a shk9Hjwe  
+[root@devhost log]# redis-cli -h 192.168.11.123 -p 6379 -a 123456  
 192.168.11.123:6379> set test:username weilin
 OK
 192.168.11.123:6379> get test:username
 "weilin"
 192.168.11.123:6379> quit
 
-[root@devhost log]# redis-cli -h 192.168.11.124 -p 6379 -a shk9Hjwe  
+[root@devhost log]# redis-cli -h 192.168.11.124 -p 6379 -a 123456  
 192.168.11.124:6379> get test:username
 "weilin"
 192.168.11.124:6379> quit
 
-[root@devhost log]# redis-cli -h 192.168.11.125 -p 6379 -a shk9Hjwe  
+[root@devhost log]# redis-cli -h 192.168.11.125 -p 6379 -a 123456  
 192.168.11.125:6379> get test:username
 "weilin"
 192.168.11.125:6379> quit
@@ -214,7 +214,7 @@ protected-mode no
 daemonize yes
 logfile "/var/log/sentinel.log"
 sentinel monitor master1 192.168.11.123 6379 2
-sentinel auth-pass master1 shk9Hjwe
+sentinel auth-pass master1 123456
 sentinel down-after-milliseconds mymaster 5000
 sentinel parallel-syncs master1 1
 sentinel failover-timeout master1 30000
@@ -267,16 +267,16 @@ LOCAL_IP='192.168.11.125'
 
 ```
 #客户端通过writevip连到redis master
-[root@devhost codis]# redis-cli -h 10.18.14.94 -a shk9Hjwe
+[root@devhost codis]# redis-cli -h 10.18.14.94 -a 123456
 10.18.14.94:6379> get test:username
 "weilin"
 
 #客户端直接连到salve redis上
-[root@devhost log]# redis-cli -h 192.168.11.124  -a shk9Hjwe         
+[root@devhost log]# redis-cli -h 192.168.11.124  -a 123456         
 192.168.11.124:6379> get test:username
 "weilin"
 
-[root@devhost ~]# redis-cli -h 192.168.11.125  -a shk9Hjwe  
+[root@devhost ~]# redis-cli -h 192.168.11.125  -a 123456  
 192.168.11.125:6379> get test:username
 "weilin"
 
@@ -295,7 +295,7 @@ OK
 
 
 #制造故障，shutdown redis master
-[root@web01 redis]# redis-cli -h 192.168.11.123 -a shk9Hjwe shutdown
+[root@web01 redis]# redis-cli -h 192.168.11.123 -a 123456 shutdown
 #过一会启动123 redis，原来的master变成slave
 [root@web01 redis]# ./bin/redis-server ./conf/redis.conf
 
@@ -775,7 +775,7 @@ TCP  10.18.14.93:6379 rr
 ```
 # client通过readvip连到redis server，负载均衡到三台
 #如果client 交互连接，就会一直连在某一台上
-[root@devhost codis]# redis-cli -h 10.18.14.93 -a shk9Hjwe 
+[root@devhost codis]# redis-cli -h 10.18.14.93 -a 123456 
 10.18.14.93:6379> get test:username
 "weilin456"
 10.18.14.93:6379> get test:username
@@ -801,11 +801,11 @@ TCP  lb01:6379 rr
   -> 10.18.14.80:6379             Route   1      1          0    
 
 #如果client命令式连接，每次都轮询到一台上
-[root@devhost codis]# redis-cli -h 10.18.14.93 -a shk9Hjwe get test:username
+[root@devhost codis]# redis-cli -h 10.18.14.93 -a 123456 get test:username
 "weilin456"
-[root@devhost codis]# redis-cli -h 10.18.14.93 -a shk9Hjwe get test:username
+[root@devhost codis]# redis-cli -h 10.18.14.93 -a 123456 get test:username
 "weilin456"
-[root@devhost codis]# redis-cli -h 10.18.14.93 -a shk9Hjwe get test:username
+[root@devhost codis]# redis-cli -h 10.18.14.93 -a 123456 get test:username
 "weilin456"
 
 [root@lb01 keepalived]# ipvsadm
