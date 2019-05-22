@@ -44,4 +44,5 @@
 * [(2019.5.17)图解raft--raft,一致性算法](2019.5/图解raft.md)
 * [(2019.5.18)如何禁止访问wsdl--安全漏洞,web service,wsdl](2019.5/如何禁止访问wsdl.md)
 * [(2019.5.19)数据库怎么分库分表--数据库,分库分表](2019.5/数据库怎么分库分表.md)
+* [(2019.5.22)elasticsearch使用7大原则--elasticsearch,ES,ELK](2019.5/elasticsearch使用7大原则.md)
 
