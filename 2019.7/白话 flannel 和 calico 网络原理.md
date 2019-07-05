@@ -99,7 +99,7 @@ agent会在本机配置一条路由规则，即：如果数据包的目标地址
 
 
 
-注：
+## 注解
 
 calico 方案就是基于三层路由，每个主机都是一个路由器，有到集群内所有docker/pod网段的路由，路由是通过BGP互相学习的。由于包中的目标地址是docker/pod地址，完全靠mac二层转发，不能跨网段。
 
@@ -115,5 +115,5 @@ flannel方案vxlan模式是通过fannel1.d虚拟网关外加一层节点主机�
 
 
 
-flannel和calico类似，支持三种模式， calico比flannel多一个网络策略管理功能，但是路由需要通过BGP学习。
+flannel和calico类似，支持三种模式， calico比flannel多一个网络策略管理功能（canal就是两方案的结合方案），但是路由需要通过BGP学习。
 
