@@ -48,6 +48,14 @@
 额外的封装导致带宽浪费，大约有30%左右的带宽损耗
 flannel vxlan和calico ipip模式都是隧道方案，但是calico的封装协议IPIP的header更小，所以性能比flannel vxlan要好一点点。
 
+
+
+[kubernetes 定义flannel的vxlan与directrouting](https://www.linuxea.com/2071.html)
+
+
+
+
+
 ## 基于路由
 
 路由方案性能最好，原因是该方案不需要封包和解包，所以没有隧道方案的劣势，网络性能很好。
@@ -116,4 +124,10 @@ flannel方案vxlan模式是通过fannel1.d虚拟网关外加一层节点主机�
 
 
 flannel和calico类似，支持三种模式， calico比flannel多一个网络策略管理功能（canal就是两方案的结合方案），但是路由需要通过BGP学习。
+
+
+
+
+
+
 
