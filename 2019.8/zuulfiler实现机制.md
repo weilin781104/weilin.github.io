@@ -78,4 +78,4 @@ spring 会管理若干HandlerMapping（比如SimpleUrlHandlerMapping/WebMvcEndpo
 
 
 
-所以要打印所有请求日志，思路是给ZuulHandlerMapping配置一个adapter解决。
+所以要打印所有请求日志，思路是 写个servlet filter，对/过滤，request中加入logBO，在处理流程中添加信息到logBO， filter回程中打印日志。
